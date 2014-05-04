@@ -11,7 +11,6 @@
 
 import cv2, sys
 import numpy as np
-import scipy as sp
 import pySaliencyMapDefs
 
 class pySaliencyMap:
