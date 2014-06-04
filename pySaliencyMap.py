@@ -71,7 +71,8 @@ class pySaliencyMap:
         # max(R,G,B)
         tmp1 = cv2.max(R, G)
         RGBMax = cv2.max(B, tmp1)
-        RGBMax = cv2.max(RGBMax, 0.0001)    # prevent dividing by 0
+#        RGBMax = cv2.max(RGBMax, 0.0001)    # prevent dividing by 0
+        RGBMax[RGBMax <= 0] = 0.0001    # prevent dividing by 0
         # min(R,G)
         RGMin = cv2.min(R,G)
         # RG = (R-G)/max(R,G,B)
@@ -79,8 +80,10 @@ class pySaliencyMap:
         # BY = (B-min(R,G)/max(R,G,B)
         BY = (B - RGMin) / RGBMax
         # clamp nagative values to 0
-        RG = cv2.max(RG, 0)
-        BY = cv2.max(BY, 0)
+#        RG = cv2.max(RG, 0)
+#        BY = cv2.max(BY, 0)
+        RG[RG < 0] = 0
+        BY[BY < 0] = 0
         # obtain feature maps in the same way as intensity
         RGFM = self.FMGaussianPyrCSD(RG)
         BYFM = self.FMGaussianPyrCSD(BY)
