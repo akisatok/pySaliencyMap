@@ -4,7 +4,7 @@
 #
 # Author:      Akisato Kimura <akisato@ieee.org>
 #
-# Created:     24/04/2014
+# Created:     April 24, 2014
 # Copyright:   (c) Akisato Kimura 2014-
 # Licence:     All rights reserved
 #-------------------------------------------------------------------------------
@@ -18,7 +18,7 @@ farne_poly_n = 5
 farne_poly_sigma = 1.2
 farne_flags = 0
 
-# parameters for detecting
+# parameters for detecting local maxima
 default_step_local = 16
 
 # feature weights
@@ -27,7 +27,7 @@ weight_color       = 0.30
 weight_orientation = 0.20
 weight_motion      = 0.20
 
-# Gabor filters
+# coefficients of Gabor filters
 GaborKernel_0 = [\
     [ 1.85212E-06, 1.28181E-05, -0.000350433, -0.000136537, 0.002010422, -0.000136537, -0.000350433, 1.28181E-05, 1.85212E-06 ],\
     [ 2.80209E-05, 0.000193926, -0.005301717, -0.002065674, 0.030415784, -0.002065674, -0.005301717, 0.000193926, 2.80209E-05 ],\

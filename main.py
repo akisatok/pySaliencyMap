@@ -4,13 +4,12 @@
 #
 # Author:      Akisato Kimura <akisato@ieee.org>
 #
-# Created:     04/05/2014
+# Created:     May 4, 2014
 # Copyright:   (c) Akisato Kimura 2014-
 # Licence:     All rights reserved
 #-------------------------------------------------------------------------------
 
 import cv2
-import numpy as np
 import pySaliencyMap
 
 # main
@@ -25,5 +24,3 @@ if __name__ == '__main__':
     cv2.imshow("output", map)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-
-

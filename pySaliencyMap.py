@@ -4,7 +4,7 @@
 #
 # Author:      Akisato Kimura <akisato@ieee.org>
 #
-# Created:     24/04/2014
+# Created:     April 24, 2014
 # Copyright:   (c) Akisato Kimura 2014-
 # Licence:     All rights reserved
 #-------------------------------------------------------------------------------
@@ -38,7 +38,7 @@ class pySaliencyMap:
     # feature maps
     ## constructing a Gaussian pyramid
     def FMCreateGaussianPyr(self, src):
-        dst = []
+        dst = list()
         dst.append(src)
         for i in range(1,9):
             nowdst = cv2.pyrDown(dst[i-1])
@@ -46,15 +46,14 @@ class pySaliencyMap:
         return dst
     ## taking center-surround differences
     def FMCenterSurroundDiff(self, GaussianMaps):
-        dst = []
+        dst = list()
         for s in range(2,5):
             now_size = GaussianMaps[s].shape
-            now_width  = now_size[1]
-            now_height = now_size[0]
-            tmp = cv2.resize(GaussianMaps[s+3], (now_width, now_height), interpolation=cv2.INTER_LINEAR)
+            now_size = (now_size[1], now_size[0])  ## (width, height)
+            tmp = cv2.resize(GaussianMaps[s+3], now_size, interpolation=cv2.INTER_LINEAR)
             nowdst = cv2.absdiff(GaussianMaps[s], tmp)
             dst.append(nowdst)
-            tmp = cv2.resize(GaussianMaps[s+4], (now_width, now_height), interpolation=cv2.INTER_LINEAR)
+            tmp = cv2.resize(GaussianMaps[s+4], now_size, interpolation=cv2.INTER_LINEAR)
             nowdst = cv2.absdiff(GaussianMaps[s], tmp)
             dst.append(nowdst)
         return dst
@@ -71,17 +70,14 @@ class pySaliencyMap:
         # max(R,G,B)
         tmp1 = cv2.max(R, G)
         RGBMax = cv2.max(B, tmp1)
-#        RGBMax = cv2.max(RGBMax, 0.0001)    # prevent dividing by 0
         RGBMax[RGBMax <= 0] = 0.0001    # prevent dividing by 0
         # min(R,G)
-        RGMin = cv2.min(R,G)
+        RGMin = cv2.min(R, G)
         # RG = (R-G)/max(R,G,B)
         RG = (R - G) / RGBMax
         # BY = (B-min(R,G)/max(R,G,B)
         BY = (B - RGMin) / RGBMax
         # clamp nagative values to 0
-#        RG = cv2.max(RG, 0)
-#        BY = cv2.max(BY, 0)
         RG[RG < 0] = 0
         BY[BY < 0] = 0
         # obtain feature maps in the same way as intensity
@@ -142,10 +138,11 @@ class pySaliencyMap:
         self.prev_frame = np.array(I8U)
         # return
         return dst_x, dst_y
+
     # conspicuity maps
     ## standard range normalization
     def SMRangeNormalize(self, src):
-        minn, maxx, nouse1, nouse2 = cv2.minMaxLoc(src)
+        minn, maxx, dummy1, dummy2 = cv2.minMaxLoc(src)
         if maxx!=minn:
             dst = src/(maxx-minn) + minn/(minn-maxx)
         else:
@@ -163,7 +160,7 @@ class pySaliencyMap:
         for y in range(0, height-stepsize, stepsize):
             for x in range(0, width-stepsize, stepsize):
                 localimg = src[y:y+stepsize, x:x+stepsize]
-                lmin, lmax, nouse1, nouse2 = cv2.minMaxLoc(localimg)
+                lmin, lmax, dummy1, dummy2 = cv2.minMaxLoc(localimg)
                 lmaxmean += lmax
                 numlocal += 1
         # averaging over all the local regions
@@ -176,7 +173,7 @@ class pySaliencyMap:
         return dst * normcoeff
     ## normalizing feature maps
     def normalizeFeatureMaps(self, FM):
-        NFM = []
+        NFM = list()
         for i in range(0,6):
             normalizedImage = self.SMNormalization(FM[i])
             nownfm = cv2.resize(normalizedImage, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
@@ -185,7 +182,8 @@ class pySaliencyMap:
     ## intensity conspicuity map
     def ICMGetCM(self, IFM):
         NIFM = self.normalizeFeatureMaps(IFM)
-        return NIFM[0]
+        ICM = sum(NIFM)
+        return ICM
     ## color conspicuity map
     def CCMGetCM(self, CFM_RG, CFM_BY):
         # extracting a conspicuity map for every color opponent pair
@@ -219,8 +217,8 @@ class pySaliencyMap:
         width  = size[1]
         height = size[0]
         # check
-        #if(width != self.width or height != self.height):
-        #    sys.exit("size mismatch")
+#        if(width != self.width or height != self.height):
+#            sys.exit("size mismatch")
         # extracting individual color channels
         R, G, B, I = self.SMExtractRGBI(src)
         # extracting feature maps
