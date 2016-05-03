@@ -9,7 +9,7 @@
 # Licence:     All rights reserved
 #-------------------------------------------------------------------------------
 
-import cv2, sys
+import cv2
 import numpy as np
 import pySaliencyMapDefs
 
@@ -31,7 +31,7 @@ class pySaliencyMap:
         # split
         (B, G, R) = cv2.split(src)
         # extract an intensity image
-        I = cv2.cvtColor(src, cv2.cv.CV_BGR2GRAY)
+        I = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
         # return
         return R, G, B, I
 
@@ -108,24 +108,35 @@ class pySaliencyMap:
         dst = list(CSD0)
         dst.extend(CSD45)
         dst.extend(CSD90)
-        dst.extend(CSD45)
+        dst.extend(CSD135)
         # return
         return dst
     ## motion feature maps
     def MFMGetFM(self, src):
         # convert scale
-        I8U = np.uint8(src) * 255
+        I8U = np.uint8(255 * src)
+        cv2.waitKey(10)
         # calculating optical flows
-        if self.prev_frame != None:
-            param1 = pySaliencyMapDefs.farne_pyr_scale
-            param2 = pySaliencyMapDefs.farne_levels
-            param3 = pySaliencyMapDefs.farne_winsize
-            param4 = pySaliencyMapDefs.farne_iterations
-            param5 = pySaliencyMapDefs.farne_poly_n
-            param6 = pySaliencyMapDefs.farne_poly_sigma
-            param7 = pySaliencyMapDefs.farne_flags
-            flow = cv2.calcOpticalFlowFarneback(prev_frame, I8U, \
-                    param1, param2, param3, param4, param5, param6, param7)
+        if self.prev_frame is not None:
+            farne_pyr_scale= pySaliencyMapDefs.farne_pyr_scale
+            farne_levels = pySaliencyMapDefs.farne_levels
+            farne_winsize = pySaliencyMapDefs.farne_winsize
+            farne_iterations = pySaliencyMapDefs.farne_iterations
+            farne_poly_n = pySaliencyMapDefs.farne_poly_n
+            farne_poly_sigma = pySaliencyMapDefs.farne_poly_sigma
+            farne_flags = pySaliencyMapDefs.farne_flags
+            flow = cv2.calcOpticalFlowFarneback(\
+                prev = self.prev_frame, \
+                next = I8U, \
+                pyr_scale = farne_pyr_scale, \
+                levels = farne_levels, \
+                winsize = farne_winsize, \
+                iterations = farne_iterations, \
+                poly_n = farne_poly_n, \
+                poly_sigma = farne_poly_sigma, \
+                flags = farne_flags, \
+                flow = None \
+            )
             flowx = flow[...,0]
             flowy = flow[...,1]
         else:
@@ -135,7 +146,7 @@ class pySaliencyMap:
         dst_x = self.FMGaussianPyrCSD(flowx)
         dst_y = self.FMGaussianPyrCSD(flowy)
         # update the current frame
-        self.prev_frame = np.array(I8U)
+        self.prev_frame = np.uint8(I8U)
         # return
         return dst_x, dst_y
 
@@ -239,8 +250,33 @@ class pySaliencyMap:
         SMMat = wi*ICM + wc*CCM + wo*OCM + wm*MCM
         # normalize
         normalizedSM = self.SMRangeNormalize(SMMat)
-        smoothedSM = cv2.GaussianBlur(normalizedSM, (7,7), 1.55)
+        normalizedSM2 = normalizedSM.astype(np.float32)
+        smoothedSM = cv2.bilateralFilter(normalizedSM2, 7, 3, 1.55)
         SM = cv2.resize(smoothedSM, (width,height), interpolation=cv2.INTER_NEAREST)
         # return
         return SM
 
+    def SMGetBinarizedSM(self, src):
+        # get a saliency map
+        SM = self.SMGetSM(src)
+        # convert scale
+        SM_I8U = np.uint8(255 * SM)
+        # binarize
+        thresh, binarized_SM = cv2.threshold(SM_I8U, thresh=0, maxval=255, type=cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        return binarized_SM
+
+    def SMGetSalientRegion(self, src):
+        # get a binarized saliency map
+        binarized_SM = self.SMGetBinarizedSM(src)
+        # GrabCut
+        img = src.copy()
+        mask =  np.where((binarized_SM!=0), cv2.GC_PR_FGD, cv2.GC_PR_BGD).astype('uint8')
+        bgdmodel = np.zeros((1,65),np.float64)
+        fgdmodel = np.zeros((1,65),np.float64)
+        rect = (0,0,1,1)  # dummy
+        iterCount = 1
+        cv2.grabCut(img, mask=mask, rect=rect, bgdModel=bgdmodel, fgdModel=fgdmodel, iterCount=iterCount, mode=cv2.GC_INIT_WITH_MASK)
+        # post-processing
+        mask_out = np.where((mask==cv2.GC_FGD) + (mask==cv2.GC_PR_FGD), 255, 0).astype('uint8')
+        output = cv2.bitwise_and(img,img,mask=mask_out)
+        return output
