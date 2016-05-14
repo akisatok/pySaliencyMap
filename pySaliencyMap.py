@@ -19,6 +19,7 @@ class pySaliencyMap:
         self.width  = width
         self.height = height
         self.prev_frame = None
+        self.SM = None
         self.GaborKernel0   = np.array(pySaliencyMapDefs.GaborKernel_0)
         self.GaborKernel45  = np.array(pySaliencyMapDefs.GaborKernel_45)
         self.GaborKernel90  = np.array(pySaliencyMapDefs.GaborKernel_90)
@@ -252,15 +253,16 @@ class pySaliencyMap:
         normalizedSM = self.SMRangeNormalize(SMMat)
         normalizedSM2 = normalizedSM.astype(np.float32)
         smoothedSM = cv2.bilateralFilter(normalizedSM2, 7, 3, 1.55)
-        SM = cv2.resize(smoothedSM, (width,height), interpolation=cv2.INTER_NEAREST)
+        self.SM = cv2.resize(smoothedSM, (width,height), interpolation=cv2.INTER_NEAREST)
         # return
-        return SM
+        return self.SM
 
     def SMGetBinarizedSM(self, src):
         # get a saliency map
-        SM = self.SMGetSM(src)
+        if self.SM is None:
+            self.SM = self.SMGetSM(src)
         # convert scale
-        SM_I8U = np.uint8(255 * SM)
+        SM_I8U = np.uint8(255 * self.SM)
         # binarize
         thresh, binarized_SM = cv2.threshold(SM_I8U, thresh=0, maxval=255, type=cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         return binarized_SM
