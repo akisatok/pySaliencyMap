@@ -16,7 +16,7 @@ Usage:
         python main.py
     This provides a simple example how to use the class pySaliencyMap.
 
-    We also a sample code for testing this package with your own webcams. Please try
+    We also provide a sample code for testing this package with your own webcams. Please try
         python main_webcam.py
 
 References:
